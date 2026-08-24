@@ -1,0 +1,181 @@
+---
+---
+
+<div class="palette" hidden>
+  <div class="palette-backdrop"></div>
+  <div class="palette-dialog" role="dialog" aria-modal="true" aria-label="Search posts">
+    <input type="search" placeholder="Search posts…" aria-label="Search posts" autocomplete="off" spellcheck="false" />
+    <ul role="listbox" aria-label="Results" hidden></ul>
+  </div>
+</div>
+
+<script>
+  import { searchDocs, type SearchDoc, type SearchResult } from '../lib/search';
+
+  const island = document.getElementById('search-docs');
+  const docs: SearchDoc[] = island ? (JSON.parse(island.textContent ?? '[]') as SearchDoc[]) : [];
+
+  const palette = document.querySelector<HTMLElement>('.palette');
+  const paletteInput = palette?.querySelector<HTMLInputElement>('input');
+  const paletteList = palette?.querySelector<HTMLUListElement>('ul');
+  const backdrop = palette?.querySelector<HTMLElement>('.palette-backdrop');
+  let lastFocused: Element | null = null;
+
+  /** One result row: title link with matched chars in <mark>, snippet below. */
+  function renderItem(li: HTMLLIElement, r: SearchResult): void {
+    const a = document.createElement('a');
+    a.href = `/${r.slug}/`;
+    const marks = new Set(r.titleMatches);
+    const nodes: Array<string | HTMLElement> = [];
+    for (let i = 0; i < r.title.length; i++) {
+      if (marks.has(i)) {
+        const m = document.createElement('mark');
+        m.textContent = r.title[i];
+        nodes.push(m);
+      } else {
+        nodes.push(r.title[i]);
+      }
+    }
+    a.replaceChildren(...nodes);
+    li.replaceChildren(a);
+    if (r.snippet) {
+      const p = document.createElement('p');
+      p.className = 'result-snippet';
+      p.textContent = r.snippet;
+      li.append(p);
+    }
+  }
+
+  function renderList(list: HTMLUListElement, results: SearchResult[]): void {
+    list.replaceChildren();
+    if (results.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'result-none';
+      li.textContent = 'No matches.';
+      list.append(li);
+      return;
+    }
+    for (const r of results) {
+      const li = document.createElement('li');
+      li.className = 'search-result';
+      li.setAttribute('role', 'option');
+      renderItem(li, r);
+      list.append(li);
+    }
+  }
+
+  /** Query -> results; empty query hides the list entirely. */
+  function updateList(input: HTMLInputElement, list: HTMLUListElement): void {
+    const q = input.value.trim();
+    if (q.length === 0) {
+      list.hidden = true;
+      list.replaceChildren();
+      return;
+    }
+    list.hidden = false;
+    renderList(list, searchDocs(q, docs, 20));
+  }
+
+  function openPalette(): void {
+    if (!palette || !paletteInput || !paletteList) return;
+    lastFocused = document.activeElement;
+    palette.hidden = false;
+    palette.classList.add('open');
+    paletteInput.value = '';
+    updateList(paletteInput, paletteList);
+    paletteInput.focus();
+  }
+
+  function closePalette(): void {
+    if (!palette || !paletteInput || !paletteList) return;
+    palette.hidden = true;
+    palette.classList.remove('open');
+    if (lastFocused instanceof HTMLElement) lastFocused.focus();
+  }
+
+  function isTypingTarget(t: EventTarget | null): boolean {
+    if (!(t instanceof HTMLElement)) return false;
+    const tag = t.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (palette?.hidden) openPalette();
+      else closePalette();
+      return;
+    }
+    if (e.key === 'Escape' && palette && !palette.hidden) {
+      e.preventDefault();
+      closePalette();
+      return;
+    }
+    if (e.key === '/' && palette?.hidden && !isTypingTarget(e.target)) {
+      const home = document.querySelector<HTMLInputElement>('.home-search input');
+      if (home) {
+        e.preventDefault();
+        home.focus();
+      }
+    }
+  });
+
+  paletteInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!paletteList || paletteList.hidden) return;
+      const items = Array.from(paletteList.querySelectorAll<HTMLLIElement>('li.search-result'));
+      if (items.length === 0) return;
+      let idx = items.findIndex((li) => li.classList.contains('active'));
+      if (e.key === 'ArrowDown') idx = idx >= items.length - 1 ? 0 : idx + 1;
+      else idx = idx <= 0 ? items.length - 1 : idx - 1;
+      items.forEach((li) => li.classList.remove('active'));
+      items[idx].classList.add('active');
+      items[idx].scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!paletteList || paletteList.hidden) return;
+      const target =
+        paletteList.querySelector<HTMLLIElement>('li.search-result.active') ??
+        paletteList.querySelector<HTMLLIElement>('li.search-result');
+      const link = target?.querySelector<HTMLAnchorElement>('a');
+      if (link) location.href = link.href;
+    }
+  });
+
+  paletteInput?.addEventListener('input', () => {
+    if (paletteInput && paletteList) updateList(paletteInput, paletteList);
+  });
+
+  backdrop?.addEventListener('click', closePalette);
+
+  document.querySelectorAll<HTMLButtonElement>('.search-trigger').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (palette?.hidden) openPalette();
+      else closePalette();
+    });
+  });
+
+  // Homepage inline search shares the same index, matching, and rendering.
+  const homeSection = document.querySelector<HTMLElement>('.home-search');
+  const homeInput = homeSection?.querySelector<HTMLInputElement>('input');
+  const homeList = homeSection?.querySelector<HTMLUListElement>('ul');
+  if (homeInput && homeList) {
+    homeInput.addEventListener('input', () => updateList(homeInput, homeList));
+    homeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (homeList.hidden) return;
+        const link = homeList.querySelector<HTMLAnchorElement>('li.search-result a');
+        if (link) location.href = link.href;
+      }
+      if (e.key === 'Escape') {
+        homeInput.value = '';
+        updateList(homeInput, homeList);
+        homeInput.blur();
+      }
+    });
+  }
+</script>

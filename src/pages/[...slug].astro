@@ -1,0 +1,74 @@
+---
+import Base from '../layouts/Base.astro';
+import Tree from '../components/Tree.astro';
+import Toc from '../components/Toc.astro';
+import { posts, buildTree, getPostSource } from '../lib/content';
+import { renderMarkdown } from '../lib/markdown';
+
+export function getStaticPaths() {
+  return posts.map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
+}
+
+interface Props {
+  entry: (typeof posts)[number];
+}
+
+const { entry } = Astro.props;
+const source = getPostSource(entry.slug);
+if (source === undefined) {
+  throw new Error(`no source for slug ${entry.slug} — regenerated loaders out of sync with manifest`);
+}
+const { html, headings } = await renderMarkdown(source, entry.relPath);
+const tree = buildTree(posts);
+---
+
+<Base title={entry.title}>
+  <div class="layout">
+    <aside class="sidebar-left">
+      <h2 class="rail-label">Posts</h2>
+      <details class="sidebar">
+        <summary>Posts</summary>
+        <div class="sidebar-body">
+          <Tree nodes={tree} current={entry.slug} />
+        </div>
+      </details>
+      <div class="sidebar-desktop">
+        <Tree nodes={tree} current={entry.slug} />
+      </div>
+    </aside>
+    <main>
+      <h1 class="post-title">{entry.title}</h1>
+      <article set:html={html} />
+    </main>
+    <aside class="sidebar-right">
+      <h2 class="rail-label">On this page</h2>
+      <details class="sidebar">
+        <summary>On this page</summary>
+        <div class="sidebar-body">
+          <Toc headings={headings} />
+        </div>
+      </details>
+      <div class="sidebar-desktop">
+        <Toc headings={headings} />
+      </div>
+    </aside>
+  </div>
+  <script>
+    const links = Array.from(document.querySelectorAll('.toc-label'));
+    if (links.length > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            const id = e.target.id;
+            links.forEach((l) => l.closest('li')!.classList.remove('active'));
+            const link = links.find((l) => l.getAttribute('href') === `#${id}`);
+            if (link) link.closest('li')!.classList.add('active');
+          }
+        },
+        { rootMargin: '0px 0px -70% 0px' }
+      );
+      document.querySelectorAll('article :is(h1, h2, h3, h4)').forEach((h) => observer.observe(h));
+    }
+  </script>
+</Base>

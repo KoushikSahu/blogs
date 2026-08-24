@@ -1,0 +1,57 @@
+---
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import SearchPalette from '../components/SearchPalette.astro';
+import SocialIcon from '../components/SocialIcon.astro';
+import { posts } from '../lib/content';
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+const siteTitle = "Koushik Sahu's blogs";
+const pageTitle = title && title !== siteTitle ? `${title} — ${siteTitle}` : siteTitle;
+const searchDocs = posts.map(({ slug, title: t, body }) => ({ slug, title: t, body }));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="site-title" href="/">{siteTitle}</a>
+        <nav class="site-nav" aria-label="Primary">
+          <a class="social-link" href="https://github.com/KoushikSahu" aria-label="GitHub">
+            <SocialIcon name="github" />
+          </a>
+          <a class="social-link" href="https://twitter.com/_Koushik_Sahu_" aria-label="X">
+            <SocialIcon name="x" />
+          </a>
+          <a class="social-link" href="https://www.linkedin.com/in/koushik-sahu/" aria-label="LinkedIn">
+            <SocialIcon name="linkedin" />
+          </a>
+          <a class="social-link" href="https://koushiksahu.github.io/portfolio/" aria-label="Portfolio">
+            <SocialIcon name="portfolio" />
+          </a>
+          <a class="social-link" href="mailto:koushiksahu68@gmail.com" aria-label="Email">
+            <SocialIcon name="email" />
+          </a>
+          <button type="button" class="search-trigger" aria-label="Search posts (⌘K)">
+            <span>Search posts</span>
+            <kbd>⌘K</kbd>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <slot />
+    <script type="application/json" id="search-docs" set:html={JSON.stringify(searchDocs).replace(/</g, '\\u003c')} />
+    <SearchPalette />
+  </body>
+</html>

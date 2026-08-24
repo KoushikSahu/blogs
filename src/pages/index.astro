@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import Tree from '../components/Tree.astro';
+import { posts, buildTree } from '../lib/content';
+
+const tree = buildTree(posts);
+---
+
+<Base>
+  <div class="layout">
+    <aside class="sidebar-left">
+      <h2 class="rail-label">Posts</h2>
+      <details class="sidebar">
+        <summary>Posts</summary>
+        <div class="sidebar-body">
+          <Tree nodes={tree} />
+        </div>
+      </details>
+      <div class="sidebar-desktop">
+        <Tree nodes={tree} />
+      </div>
+    </aside>
+    <main>
+      <h1 class="home-hero">Koushik Sahu's blogs</h1>
+      <p class="home-intro">
+        I'm a software engineer at Microsoft in Bengaluru. This site is a running log of things I'm learning —
+        notes, deep dives, and write-ups.
+      </p>
+      <section class="home-search">
+        <label for="home-search-input" class="visually-hidden">Search posts</label>
+        <input id="home-search-input" type="search" placeholder="Search posts…" autocomplete="off" spellcheck="false" />
+        <ul role="listbox" aria-label="Results" hidden></ul>
+        <p class="search-hint">Fuzzy search over titles and full text · ⌘K also works from any page</p>
+      </section>
+    </main>
+    <aside class="sidebar-right" />
+  </div>
+</Base>

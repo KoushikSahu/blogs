@@ -1,0 +1,33 @@
+---
+import type { TreeEntry } from '../lib/content';
+import Tree from './Tree.astro';
+
+interface Props {
+  nodes: TreeEntry[];
+  current?: string;
+}
+
+const { nodes, current } = Astro.props;
+
+/** True when any file node in the subtree carries this slug. */
+function containsSlug(nodes: TreeEntry[], slug: string): boolean {
+  return nodes.some((n) => (n.children ? containsSlug(n.children, slug) : n.entry!.slug === slug));
+}
+---
+
+<ul class="tree">
+  {nodes.map((node) =>
+    node.children ? (
+      <li>
+        <details class="tree-dir" open={current !== undefined && containsSlug(node.children, current)}>
+          <summary class="dir-name">{node.name}</summary>
+          <Tree nodes={node.children} current={current} />
+        </details>
+      </li>
+    ) : (
+      <li class={current === node.entry!.slug ? 'current' : undefined}>
+        <a href={`/${node.entry!.slug}/`}>{node.entry!.title}</a>
+      </li>
+    )
+  )}
+</ul>

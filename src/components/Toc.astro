@@ -1,0 +1,19 @@
+---
+interface Props {
+  headings: { depth: number; text: string; id: string }[];
+}
+
+const { headings } = Astro.props;
+---
+
+{
+  headings.length > 0 && (
+    <ol class="toc">
+      {headings.map((h) => (
+        <li class={`depth-${h.depth}`}>
+          <a class="toc-label" href={`#${h.id}`} title={h.text}>{h.text}</a>
+        </li>
+      ))}
+    </ol>
+  )
+}
