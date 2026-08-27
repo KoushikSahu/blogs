@@ -3,6 +3,7 @@ import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import SearchPalette from '../components/SearchPalette.astro';
 import SocialIcon from '../components/SocialIcon.astro';
+import { withBase } from '../lib/base';
 import { posts } from '../lib/content';
 
 interface Props {
@@ -20,13 +21,13 @@ const searchDocs = posts.map(({ slug, title: t, body }) => ({ slug, title: t, bo
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <title>{pageTitle}</title>
   </head>
   <body>
     <header class="site-header">
       <div class="site-header-inner">
-        <a class="site-title" href="/">{siteTitle}</a>
+        <a class="site-title" href={withBase('/')}>{siteTitle}</a>
         <nav class="site-nav" aria-label="Primary">
           <a class="social-link" href="https://github.com/KoushikSahu" aria-label="GitHub">
             <SocialIcon name="github" />

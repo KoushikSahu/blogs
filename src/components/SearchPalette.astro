@@ -1,5 +1,7 @@
 ---
+import { withBase } from '../lib/base';
 ---
+
 
 <div class="palette" hidden>
   <div class="palette-backdrop"></div>
@@ -11,6 +13,8 @@
 
 <script>
   import { searchDocs, type SearchDoc, type SearchResult } from '../lib/search';
+  import { withBase } from '../lib/base';
+
 
   const island = document.getElementById('search-docs');
   const docs: SearchDoc[] = island ? (JSON.parse(island.textContent ?? '[]') as SearchDoc[]) : [];
@@ -24,7 +28,7 @@
   /** One result row: title link with matched chars in <mark>, snippet below. */
   function renderItem(li: HTMLLIElement, r: SearchResult): void {
     const a = document.createElement('a');
-    a.href = `/${r.slug}/`;
+    a.href = withBase(`/${r.slug}/`);
     const marks = new Set(r.titleMatches);
     const nodes: Array<string | HTMLElement> = [];
     for (let i = 0; i < r.title.length; i++) {

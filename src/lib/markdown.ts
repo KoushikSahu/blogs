@@ -9,6 +9,7 @@ import rehypePrettyCode from 'rehype-pretty-code';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
 import { visit } from 'unist-util-visit';
+import { withBase } from './base';
 import type { Element, Root } from 'hast';
 
 export interface RenderedPost {
@@ -43,7 +44,7 @@ function rehypeRewriteAssetUrls(relPath: string) {
       if (typeof src !== 'string') return;
       if (/^(?:[a-z]+:|\/|#|data:)/i.test(src)) return;
       const resolved = (dir ? dir + '/' : '') + src;
-      node.properties.src = import.meta.env.BASE_URL + 'assets/' + normalizePath(resolved);
+      node.properties.src = withBase('assets/' + normalizePath(resolved));
     });
   };
 }

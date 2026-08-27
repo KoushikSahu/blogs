@@ -1,5 +1,6 @@
 ---
 import type { TreeEntry } from '../lib/content';
+import { withBase } from '../lib/base';
 import Tree from './Tree.astro';
 
 interface Props {
@@ -26,7 +27,7 @@ function containsSlug(nodes: TreeEntry[], slug: string): boolean {
       </li>
     ) : (
       <li class={current === node.entry!.slug ? 'current' : undefined}>
-        <a href={`/${node.entry!.slug}/`}>{node.entry!.title}</a>
+        <a href={withBase(`/${node.entry!.slug}/`)}>{node.entry!.title}</a>
       </li>
     )
   )}
